@@ -12,6 +12,7 @@ from src.control.queue import ActionQueue
 from src.control.tricks.registry import TrickRegistry
 from src.tello.client import TelloClient
 from src.tello.safety import SafetyController
+from src.tello.wifi import TelloWifiSession
 from src.vision.gestures import GestureRecognizer
 from src.vision.stream import VideoStream
 from src.vision.tracking import PersonTracker
@@ -68,13 +69,28 @@ def run() -> int:
     _configure_logging(config.log_level)
     dry_run = args.dry_run or config.dry_run_default
 
-    modules = _initialize_modules(config, dry_run=dry_run)
-    tello_client = modules["tello_client"]
-    assert isinstance(tello_client, TelloClient)
+    wifi_session: TelloWifiSession | None = None
+    if not dry_run:
+        wifi_session = TelloWifiSession(
+            ssid=config.tello_wifi_ssid,
+            connect_timeout_s=config.tello_wifi_connect_timeout_s,
+        )
 
-    if not tello_client.connect():
-        LOGGER.error("Unable to initialize Tello connection.")
-        return 1
+    try:
+        if wifi_session is not None and not wifi_session.connect():
+            LOGGER.error("Unable to connect to Tello WiFi.")
+            return 1
 
-    LOGGER.info("Phase 1 bootstrap completed successfully.")
-    return 0
+        modules = _initialize_modules(config, dry_run=dry_run)
+        tello_client = modules["tello_client"]
+        assert isinstance(tello_client, TelloClient)
+
+        if not tello_client.connect():
+            LOGGER.error("Unable to initialize Tello connection.")
+            return 1
+
+        LOGGER.info("Phase 1 bootstrap completed successfully.")
+        return 0
+    finally:
+        if wifi_session is not None:
+            wifi_session.disconnect()

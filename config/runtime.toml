@@ -2,3 +2,7 @@
 dry_run_default = true
 connect_timeout_s = 8
 log_level = "INFO"
+
+[tello_wifi]
+ssid = "TELLO-9ABB41"
+connect_timeout_s = 15
