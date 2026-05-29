@@ -1,17 +1,5 @@
-from djitellopy import Tello
-
-def main():
-    print("Hello from tello-motion!")
-
-    tello = Tello()
-
-    tello.connect()
-    tello.takeoff()
-
-    tello.rotate_clockwise(360)
-
-    tello.land()
+from src.app.bootstrap import run
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(run())
